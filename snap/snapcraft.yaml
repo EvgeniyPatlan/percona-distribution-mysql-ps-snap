@@ -26,10 +26,16 @@ description: |
       /var/snap/percona-distribution-mysql-ps/current/etc/mysqlrouter/,
       extra options via `snap set percona-distribution-mysql-ps
       mysqlrouter.extra-options="..."`.
-    .proxysql — ProxySQL; admin interface 127.0.0.1:6032 (default
-      credentials admin:admin — CHANGE THEM), proxy interface :6033; config
-      seeded at /var/snap/percona-distribution-mysql-ps/current/etc/proxysql.cnf.
-    .orchestrator — Orchestrator (sqlite backend); web UI and API on :3000;
+    .proxysql — ProxySQL; admin interface :6032 on ALL interfaces (default
+      credentials admin:admin — CHANGE BOTH BEFORE STARTING on a routable
+      host), proxy interface :6033; config seeded at
+      /var/snap/percona-distribution-mysql-ps/current/etc/proxysql.cnf.
+      The proxysql-admin and proxysql-status tools need connection flags
+      (--user/--password/--host/--port) or a proxysql-admin.cnf passed via
+      --config-file; no default config is shipped.
+    .orchestrator — Orchestrator (sqlite backend); web UI and API on :3000
+      on ALL interfaces with NO authentication by default — restrict access
+      or set an AuthenticationMethod before starting on a routable host;
       config at /var/snap/percona-distribution-mysql-ps/current/etc/orchestrator.conf.json.
 
   The Percona telemetry agent is not shipped and server-side telemetry is
