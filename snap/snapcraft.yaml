@@ -268,7 +268,6 @@ parts:
       - -usr/lib/*/libkadm5clnt_mit.so*
       - -usr/lib/*/libkadm5srv_mit.so*
       - -usr/lib/*/libkdb5.so*
-      - -usr/lib/*/libunbound.so*
       - -usr/lib/*/libmemusage.so*
       - -usr/lib/*/libmenuw.so*
       - -usr/lib/*/libmvec.so*
@@ -284,6 +283,7 @@ parts:
       - -usr/lib/*/librt.so*
       - -usr/lib/*/libthread_db.so*
       - -usr/lib/*/libtic.so*
+      - -usr/lib/*/libunbound.so*
       - -usr/lib/*/libutil.so*
     organize:
       # proxysql2's packaged default config collides at the same stage path
