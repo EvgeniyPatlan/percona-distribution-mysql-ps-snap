@@ -1,0 +1,294 @@
+name: percona-distribution-mysql-ps
+base: core26
+version: '8.4.11-11'
+summary: Percona Distribution for MySQL (Percona Server-based) in a snap.
+description: |
+  Percona Distribution for MySQL is a single solution combining Percona
+  Server for MySQL with the best components from the Percona ecosystem, all
+  tested to work together: Percona XtraBackup for hot physical backups,
+  MySQL Router and MySQL Shell for InnoDB Cluster workflows, ProxySQL for
+  SQL-aware load balancing, and Orchestrator for replication topology
+  management.
+
+  On install the snap initializes the data directory and starts Percona
+  Server; connect immediately with:
+    sudo percona-distribution-mysql-ps.mysql -u root
+  The RocksDB storage engine ships ready to enable:
+    sudo percona-distribution-mysql-ps.ps-admin --enable-rocksdb -u root
+
+  Hot backups work out of the box against this snap's own server:
+    sudo percona-distribution-mysql-ps.xtrabackup --backup -u root \
+      -S /var/snap/percona-distribution-mysql-ps/current/run/mysqld.sock \
+      --target-dir=/var/snap/percona-distribution-mysql-ps/common/backup
+
+  Optional services (disabled by default, start with `snap start`):
+    .mysqlrouter-service — MySQL Router; config in
+      /var/snap/percona-distribution-mysql-ps/current/etc/mysqlrouter/,
+      extra options via `snap set percona-distribution-mysql-ps
+      mysqlrouter.extra-options="..."`.
+    .proxysql — ProxySQL; admin interface 127.0.0.1:6032 (default
+      credentials admin:admin — CHANGE THEM), proxy interface :6033; config
+      seeded at /var/snap/percona-distribution-mysql-ps/current/etc/proxysql.cnf.
+    .orchestrator — Orchestrator (sqlite backend); web UI and API on :3000;
+      config at /var/snap/percona-distribution-mysql-ps/current/etc/orchestrator.conf.json.
+
+  The Percona telemetry agent is not shipped and server-side telemetry is
+  disabled by default.
+title: Percona Distribution for MySQL (PS)
+contact: https://github.com/EvgeniyPatlan/percona-distribution-mysql-ps-snap/issues
+issues: https://github.com/EvgeniyPatlan/percona-distribution-mysql-ps-snap/issues
+source-code: https://github.com/EvgeniyPatlan/percona-distribution-mysql-ps-snap
+website: https://www.percona.com/mysql/software/percona-distribution-for-mysql
+
+grade: stable
+confinement: strict
+license: Apache-2.0
+platforms:
+  amd64:
+  arm64:
+
+system-usernames:
+  snap_daemon: shared
+
+layout:
+  /usr/lib/mysql:
+    symlink: $SNAP/usr/lib/mysql
+  /etc/mysqlrouter:
+    symlink: $SNAP_DATA/etc/mysqlrouter
+  /var/lib/mysqlrouter:
+    symlink: $SNAP_DATA/var/lib/mysqlrouter
+  /var/log/mysqlrouter:
+    symlink: $SNAP_COMMON/var/log/mysqlrouter
+  /usr/lib/mysqlrouter:
+    symlink: $SNAP/usr/lib/mysqlrouter
+  /usr/lib/mysql-router:
+    symlink: $SNAP/usr/lib/mysql-router
+  /usr/lib/mysqlsh:
+    bind: $SNAP/usr/lib/mysqlsh
+  /var/log/mysqlsh:
+    bind: $SNAP_COMMON/var/log/mysqlsh
+  /var/lib/mysql-files:
+    bind: $SNAP_COMMON/var/lib/mysql-files
+
+package-repositories:
+  - type: apt
+    url: https://repo.percona.com/pdps-84-lts/apt
+    suites: [resolute]
+    components: [main]
+    key-id: 4D1BB29D63D98E422B2113B19334A25F8507EFA5
+  # Needed only because percona-server-server depends on
+  # percona-telemetry-agent; the agent is pruned below.
+  - type: apt
+    url: https://repo.percona.com/telemetry/apt
+    suites: [resolute]
+    components: [main]
+    key-id: 4D1BB29D63D98E422B2113B19334A25F8507EFA5
+
+hooks:
+  install:
+    plugs:
+      - network
+      - network-bind
+  configure: {}
+
+slots:
+  mysql-sockets:
+    interface: content
+    content: socket-directory
+    write:
+      - $SNAP_DATA/run
+
+apps:
+  mysqld:
+    command: bin/mysqld.sh
+    daemon: simple
+    stop-timeout: 5m
+    plugs:
+      - network
+      - network-bind
+  mysql:
+    command: usr/bin/mysql -S $SNAP_DATA/run/mysqld.sock
+    plugs:
+      - network
+  mysqladmin:
+    command: usr/bin/mysqladmin -S $SNAP_DATA/run/mysqld.sock
+    plugs:
+      - network
+  mysqlcheck:
+    command: usr/bin/mysqlcheck -S $SNAP_DATA/run/mysqld.sock
+    plugs:
+      - network
+  mysqldump:
+    command: usr/bin/mysqldump -S $SNAP_DATA/run/mysqld.sock
+    plugs:
+      - network
+  mysqlimport:
+    command: usr/bin/mysqlimport -S $SNAP_DATA/run/mysqld.sock
+    plugs:
+      - network
+  mysqlshow:
+    command: usr/bin/mysqlshow -S $SNAP_DATA/run/mysqld.sock
+    plugs:
+      - network
+  mysqlslap:
+    command: usr/bin/mysqlslap -S $SNAP_DATA/run/mysqld.sock
+    plugs:
+      - network
+  ps-admin:
+    command: usr/bin/ps-admin -S $SNAP_DATA/run/mysqld.sock
+    plugs:
+      - network
+  xtrabackup:
+    command: bin/run-xtrabackup.sh
+    plugs:
+      - network
+  xbstream:
+    command: bin/run-xbstream.sh
+    plugs:
+      - network
+  xbcloud:
+    command: bin/run-xbcloud.sh
+    plugs:
+      - network
+  xbcrypt:
+    command: bin/run-xbcrypt.sh
+    plugs:
+      - network
+  mysqlsh:
+    command: bin/run-mysqlsh.sh
+    plugs:
+      - network
+  mysqlrouter:
+    command: bin/run-mysql-router.sh
+    plugs:
+      - network
+  mysqlrouter-service:
+    command: bin/start-mysql-router.sh
+    daemon: simple
+    install-mode: disable
+    plugs:
+      - network
+      - network-bind
+  mysqlrouter-passwd:
+    command: bin/run-mysql-router-password.sh
+    plugs:
+      - network
+  proxysql:
+    command: bin/proxysql.sh
+    daemon: simple
+    install-mode: disable
+    plugs:
+      - network
+      - network-bind
+  proxysql-admin:
+    command: bin/run-proxysql-admin.sh
+    plugs:
+      - network
+  proxysql-status:
+    command: bin/run-proxysql-status.sh
+    plugs:
+      - network
+  orchestrator:
+    command: bin/orchestrator.sh
+    daemon: simple
+    install-mode: disable
+    plugs:
+      - network
+      - network-bind
+  orchestrator-client:
+    command: bin/run-orchestrator-client.sh
+    plugs:
+      - network
+
+parts:
+  packages-deb:
+    plugin: nil
+    stage-packages:
+      - percona-server-server=8.4.11-11-1.resolute
+      - percona-server-client=8.4.11-11-1.resolute
+      - percona-server-rocksdb=8.4.11-11-1.resolute
+      - percona-xtrabackup-84=8.4.0-6-1.resolute
+      - percona-mysql-router=8.4.11-11-1.resolute
+      - percona-mysql-shell=8.4.10-1-1.resolute
+      - proxysql2=2:2.7.3-1.6.resolute
+      - percona-orchestrator=2:3.2.6-24.resolute
+      - percona-orchestrator-client=2:3.2.6-24.resolute
+      - util-linux
+    prime:
+      # Percona telemetry agent (pulled in as a hard dependency; not shipped)
+      - -usr/bin/percona-telemetry-agent
+      - -etc/default
+      - -etc/logrotate.d
+      - -usr/sbin/logrotate
+      - -lib/systemd
+      - -usr/lib/systemd
+      # Host-only integration files that make no sense inside a snap
+      - -etc/init.d
+      - -etc/apparmor.d
+      - -etc/cron.daily
+      - -etc/logcheck
+      - -etc/config.toml
+      - -usr/bin/mysql-systemd
+      # Test-only tools and debug binaries
+      - -usr/bin/mysqltest
+      - -usr/bin/mysql_client_test
+      - -usr/bin/mysql_keyring_encryption_test
+      - -usr/bin/xtrabackup-debug
+      - -usr/sbin/mysqld-debug
+      - -usr/lib/mysql/plugin/debug
+      # Orchestrator: unused samples and legacy resources
+      - -usr/local/orchestrator/orchestrator-sample.conf.json
+      - -usr/local/orchestrator/orchestrator-sample-sqlite.conf.json
+      - -usr/local/orchestrator/resources/pseudo-gtid
+      # Mute lint: unused libraries (sibling baseline; extended from real
+      # build lint output)
+      - -usr/lib/*/libBrokenLocale.so*
+      - -usr/lib/*/libanl.so*
+      - -usr/lib/*/libbrotlienc.so*
+      - -usr/lib/*/libc_malloc_debug.so*
+      - -usr/lib/*/libdl.so*
+      - -usr/lib/*/libdrop_ambient.so*
+      - -usr/lib/*/libmemusage.so*
+      - -usr/lib/*/libmvec.so*
+      - -usr/lib/*/libnsl.so*
+      - -usr/lib/*/libnss_compat.so*
+      - -usr/lib/*/libnss_dns.so*
+      - -usr/lib/*/libnss_files.so*
+      - -usr/lib/*/libnss_hesiod.so*
+      - -usr/lib/*/libpamc.so*
+      - -usr/lib/*/libpcprofile.so*
+      - -usr/lib/*/libpopt.so*
+      - -usr/lib/*/libpthread.so*
+      - -usr/lib/*/librt.so*
+      - -usr/lib/*/libthread_db.so*
+      - -usr/lib/*/libtic.so*
+      - -usr/lib/*/libutil.so*
+    organize:
+      usr/share/doc/percona-server-server/copyright: licenses/COPYRIGHT-percona-server-server
+      usr/share/doc/percona-server-client/copyright: licenses/COPYRIGHT-percona-server-client
+      usr/share/doc/percona-server-common/copyright: licenses/COPYRIGHT-percona-server-common
+      usr/share/doc/percona-server-rocksdb/copyright: licenses/COPYRIGHT-percona-server-rocksdb
+      usr/share/doc/percona-xtrabackup-84/copyright: licenses/COPYRIGHT-percona-xtrabackup
+      usr/share/doc/percona-mysql-router/copyright: licenses/COPYRIGHT-percona-mysql-router
+      usr/share/doc/percona-mysql-shell/copyright: licenses/COPYRIGHT-percona-mysql-shell
+      usr/share/doc/proxysql2/copyright: licenses/COPYRIGHT-proxysql
+      usr/share/doc/percona-orchestrator/copyright: licenses/COPYRIGHT-percona-orchestrator
+      usr/share/doc/percona-orchestrator-client/copyright: licenses/COPYRIGHT-percona-orchestrator-client
+      usr/share/doc/util-linux/copyright: licenses/COPYRIGHT-util-linux
+  snap-license:
+    plugin: dump
+    source: .
+    source-type: local
+    stage:
+      - licenses/LICENSE-snap
+    organize:
+      LICENSE: licenses/LICENSE-snap
+  snap-scripts:
+    plugin: dump
+    source: snap/local
+    source-type: local
+    override-prime: |
+      craftctl default
+      sed -i 's/_NAME_/$SNAPCRAFT_PROJECT_NAME/g' bin/*.sh
+      sed -i 's/_NAME_/$SNAPCRAFT_PROJECT_NAME/g' etc/*.cnf
+      sed -i 's/_NAME_/$SNAPCRAFT_PROJECT_NAME/g' etc/*.json
