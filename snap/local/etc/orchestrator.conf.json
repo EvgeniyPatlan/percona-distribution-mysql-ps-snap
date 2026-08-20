@@ -1,0 +1,17 @@
+{
+  "Debug": false,
+  "EnableSyslog": false,
+  "ListenAddress": ":3000",
+  "BackendDB": "sqlite",
+  "SQLite3DataFile": "/var/snap/_NAME_/common/orchestrator/orchestrator.sqlite3",
+  "MySQLTopologyUser": "orc_client_user",
+  "MySQLTopologyPassword": "orc_client_password",
+  "MySQLConnectTimeoutSeconds": 1,
+  "DefaultInstancePort": 3306,
+  "InstancePollSeconds": 5,
+  "DiscoverByShowSlaveHosts": true,
+  "HostnameResolveMethod": "none",
+  "MySQLHostnameResolveMethod": "",
+  "RemoveTextFromHostnameDisplay": ":3306",
+  "AuthenticationMethod": ""
+}
