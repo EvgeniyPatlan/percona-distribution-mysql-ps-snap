@@ -30,9 +30,9 @@ description: |
       credentials admin:admin — CHANGE BOTH BEFORE STARTING on a routable
       host), proxy interface :6033; config seeded at
       /var/snap/percona-distribution-mysql-ps/current/etc/proxysql.cnf.
-      The proxysql-admin and proxysql-status tools need connection flags
-      (--user/--password/--host/--port) or a proxysql-admin.cnf passed via
-      --config-file; no default config is shipped.
+      The proxysql-admin tool needs --proxysql-username/--proxysql-password
+      (or a proxysql-admin.cnf passed via --config-file) and proxysql-status
+      needs --login-file or a ~/.my.cnf; no default config is shipped.
     .orchestrator — Orchestrator (sqlite backend); web UI and API on :3000
       on ALL interfaces with NO authentication by default — restrict access
       or set an AuthenticationMethod before starting on a routable host;
