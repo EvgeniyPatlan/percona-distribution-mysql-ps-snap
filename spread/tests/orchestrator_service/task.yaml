@@ -1,0 +1,36 @@
+summary: Percona Distribution Orchestrator service tests
+
+prepare: |
+  snap install "${SPREAD_PATH}/$(basename "${CRAFT_ARTIFACT}")" --dangerous --jailmode
+  until [ -S /var/snap/percona-distribution-mysql-ps/current/run/mysqld.sock ]; do
+    echo "Waiting for mysqld.sock"
+    sleep 1
+  done
+
+execute: |
+  CMD="percona-distribution-mysql-ps.mysql -u root"
+
+  echo "Creating the topology user"
+  ${CMD} -e "CREATE USER 'orc_client_user'@'%' IDENTIFIED WITH caching_sha2_password BY 'orc_client_password';"
+  ${CMD} -e "GRANT ALL ON *.* TO 'orc_client_user'@'%';"
+
+  echo "Starting Orchestrator"
+  snap start percona-distribution-mysql-ps.orchestrator
+  for i in $(seq 30); do
+    if curl -s http://127.0.0.1:3000/api/health | grep -q OK; then break; fi
+    sleep 2
+  done
+  curl -s http://127.0.0.1:3000/api/health | grep -q OK
+
+  echo "Discovering the local instance"
+  percona-distribution-mysql-ps.orchestrator-client -c discover -i 127.0.0.1:3306
+  for i in $(seq 15); do
+    if percona-distribution-mysql-ps.orchestrator-client -c clusters | grep -q 127.0.0.1; then break; fi
+    sleep 2
+  done
+  percona-distribution-mysql-ps.orchestrator-client -c clusters | grep -q 127.0.0.1
+
+  snap stop percona-distribution-mysql-ps.orchestrator
+
+restore: |
+  snap remove percona-distribution-mysql-ps --purge --terminate

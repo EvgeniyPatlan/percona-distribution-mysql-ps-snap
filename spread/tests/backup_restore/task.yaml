@@ -1,0 +1,48 @@
+summary: Percona Distribution backup and restore tests (XtraBackup)
+
+prepare: |
+  snap install "${SPREAD_PATH}/$(basename "${CRAFT_ARTIFACT}")" --dangerous --jailmode
+  until [ -S /var/snap/percona-distribution-mysql-ps/current/run/mysqld.sock ]; do
+    echo "Waiting for mysqld.sock"
+    sleep 1
+  done
+
+execute: |
+  CMD="percona-distribution-mysql-ps.mysql -u root"
+  SOCK=/var/snap/percona-distribution-mysql-ps/current/run/mysqld.sock
+  DATA=/var/snap/percona-distribution-mysql-ps/common/data
+  BACKUP=/var/snap/percona-distribution-mysql-ps/common/backup
+
+  echo "Creating test data"
+  ${CMD} -e "CREATE DATABASE bkp;"
+  ${CMD} -e "CREATE TABLE bkp.t (id INT PRIMARY KEY, v VARCHAR(50));"
+  ${CMD} -e "INSERT INTO bkp.t VALUES (1, 'precious');"
+
+  echo "Taking hot backup"
+  percona-distribution-mysql-ps.xtrabackup --backup -u root -S ${SOCK} \
+    --datadir=${DATA} --target-dir=${BACKUP}
+
+  echo "Preparing backup"
+  percona-distribution-mysql-ps.xtrabackup --prepare --target-dir=${BACKUP}
+
+  echo "Simulating data loss"
+  ${CMD} -e "DROP DATABASE bkp;"
+  snap stop percona-distribution-mysql-ps.mysqld
+  rm -rf ${DATA}
+  mkdir ${DATA}
+  chown snap_daemon:root ${DATA}
+
+  echo "Restoring"
+  percona-distribution-mysql-ps.xtrabackup --copy-back --target-dir=${BACKUP} --datadir=${DATA}
+  chown -R snap_daemon:root ${DATA}
+  chmod go-rwx ${DATA}
+
+  snap start percona-distribution-mysql-ps.mysqld
+  until ${CMD} -e "SELECT 1;" &>/dev/null; do
+    echo "Waiting for mysql to be available..."
+    sleep 1
+  done
+  ${CMD} -e "SELECT v FROM bkp.t WHERE id = 1;" | grep -q precious
+
+restore: |
+  snap remove percona-distribution-mysql-ps --purge --terminate

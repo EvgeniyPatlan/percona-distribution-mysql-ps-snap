@@ -1,0 +1,52 @@
+summary: Percona Distribution MySQL Router service tests
+
+prepare: |
+  snap install "${SPREAD_PATH}/$(basename "${CRAFT_ARTIFACT}")" --dangerous --jailmode
+  until [ -S /var/snap/percona-distribution-mysql-ps/current/run/mysqld.sock ]; do
+    echo "Waiting for mysqld.sock"
+    sleep 1
+  done
+
+execute: |
+  ROUTER_ETC=/var/snap/percona-distribution-mysql-ps/current/etc/mysqlrouter
+
+  echo "Installing router configuration"
+  cat > ${ROUTER_ETC}/mysqlrouter.conf <<'EOF'
+  [DEFAULT]
+  logging_folder=
+
+  [http_server]
+
+  [rest_api]
+
+  [rest_router]
+  require_realm=testrealm
+
+  [http_auth_realm:testrealm]
+  backend=testbackend
+  method=basic
+  name=Test Realm
+
+  [http_auth_backend:testbackend]
+  backend=file
+  filename=/etc/mysqlrouter/mysqlrouter.pwd
+  EOF
+  chown snap_daemon ${ROUTER_ETC}/mysqlrouter.conf
+
+  echo "Creating a REST user"
+  echo password | percona-distribution-mysql-ps.mysqlrouter-passwd set ${ROUTER_ETC}/mysqlrouter.pwd user
+  chown snap_daemon ${ROUTER_ETC}/mysqlrouter.pwd
+
+  echo "Starting router"
+  snap start percona-distribution-mysql-ps.mysqlrouter-service
+  for i in $(seq 15); do
+    if snap services percona-distribution-mysql-ps.mysqlrouter-service | grep -q " active"; then break; fi
+    sleep 2
+  done
+  snap services percona-distribution-mysql-ps.mysqlrouter-service | grep -q " active"
+  curl -s http://127.0.0.1:8081/api/20190715/swagger.json | grep -q swagger
+
+  snap stop percona-distribution-mysql-ps.mysqlrouter-service
+
+restore: |
+  snap remove percona-distribution-mysql-ps --purge --terminate
