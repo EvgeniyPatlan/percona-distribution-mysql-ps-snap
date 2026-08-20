@@ -32,7 +32,7 @@ execute: |
     if ${PCMD} -e "SELECT 1;" &>/dev/null; then break; fi
     sleep 2
   done
-  ${PCMD} -e "SELECT @@version;" | grep -q "8.4"
+  ${PCMD} -e "SELECT @@version;" | grep -q "9.7"
 
   snap stop percona-distribution-mysql-ps.proxysql
 

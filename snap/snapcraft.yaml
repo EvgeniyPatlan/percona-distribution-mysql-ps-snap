@@ -1,6 +1,6 @@
 name: percona-distribution-mysql-ps
 base: core26
-version: '8.4.11-11'
+version: '9.7.1-1'
 summary: Percona Distribution for MySQL (Percona Server-based) in a snap.
 description: |
   Percona Distribution for MySQL is a single solution combining Percona
@@ -34,6 +34,9 @@ description: |
 
   The Percona telemetry agent is not shipped and server-side telemetry is
   disabled by default.
+
+  NOTE: on the 9.7 track, Percona XtraBackup is currently a release
+  candidate (9.7.1~rc1).
 title: Percona Distribution for MySQL (PS)
 contact: https://github.com/EvgeniyPatlan/percona-distribution-mysql-ps-snap/issues
 issues: https://github.com/EvgeniyPatlan/percona-distribution-mysql-ps-snap/issues
@@ -74,7 +77,7 @@ layout:
 
 package-repositories:
   - type: apt
-    url: https://repo.percona.com/pdps-84-lts/apt
+    url: https://repo.percona.com/pdps-97-lts/apt
     suites: [resolute]
     components: [main]
     key-id: 4D1BB29D63D98E422B2113B19334A25F8507EFA5
@@ -206,15 +209,15 @@ parts:
   packages-deb:
     plugin: nil
     stage-packages:
-      - percona-server-server=8.4.11-11-1.resolute
-      - percona-server-client=8.4.11-11-1.resolute
-      - percona-server-rocksdb=8.4.11-11-1.resolute
-      - percona-xtrabackup-84=8.4.0-6-1.resolute
-      - percona-mysql-router=8.4.11-11-1.resolute
-      - percona-mysql-shell=8.4.10-1-1.resolute
-      - proxysql2=2:2.7.3-1.6.resolute
-      - percona-orchestrator=2:3.2.6-24.resolute
-      - percona-orchestrator-client=2:3.2.6-24.resolute
+      - percona-server-server=9.7.1-1-1.resolute
+      - percona-server-client=9.7.1-1-1.resolute
+      - percona-server-rocksdb=9.7.1-1-1.resolute
+      - percona-xtrabackup-97=9.7.1~rc1-1.resolute
+      - percona-mysql-router=9.7.1-1-1.resolute
+      - percona-mysql-shell=9.7.1-1-1.resolute
+      - proxysql3=2:3.0.9-1.1.resolute
+      - percona-orchestrator=2:3.2.6-23.resolute
+      - percona-orchestrator-client=2:3.2.6-23.resolute
       - util-linux
     prime:
       # Percona telemetry agent (pulled in as a hard dependency; not shipped)
@@ -286,19 +289,29 @@ parts:
       - -usr/lib/*/libunbound.so*
       - -usr/lib/*/libutil.so*
     organize:
-      # proxysql2's packaged default config collides at the same stage path
+      # proxysql3's packaged default config collides at the same stage path
       # (etc/proxysql.cnf) with the seeded config the snap-scripts part
       # installs there; reroute the packaged default out of the way so our
       # own config (rendered by the install hook) is the one that ships.
-      etc/proxysql.cnf: usr/share/proxysql2/proxysql.cnf.default
+      # Confirmed via `dpkg-deb -c` on the pdps-97-lts proxysql3 .deb that
+      # it still ships its default at ./etc/proxysql.cnf, same collision
+      # as proxysql2 on the 8.4 track.
+      etc/proxysql.cnf: usr/share/proxysql3/proxysql.cnf.default
       usr/share/doc/percona-server-server/copyright: licenses/COPYRIGHT-percona-server-server
       usr/share/doc/percona-server-client/copyright: licenses/COPYRIGHT-percona-server-client
       usr/share/doc/percona-server-common/copyright: licenses/COPYRIGHT-percona-server-common
       usr/share/doc/percona-server-rocksdb/copyright: licenses/COPYRIGHT-percona-server-rocksdb
-      usr/share/doc/percona-xtrabackup-84/copyright: licenses/COPYRIGHT-percona-xtrabackup
+      # 9.7 track: percona-server-server/-client now pull in split
+      # -server-core/-client-core/-client-plugins packages (confirmed
+      # present in the pdps-97-lts index; absent as separate copyright
+      # files on 8.4, so not touched there).
+      usr/share/doc/percona-server-server-core/copyright: licenses/COPYRIGHT-percona-server-server-core
+      usr/share/doc/percona-server-client-core/copyright: licenses/COPYRIGHT-percona-server-client-core
+      usr/share/doc/percona-server-client-plugins/copyright: licenses/COPYRIGHT-percona-server-client-plugins
+      usr/share/doc/percona-xtrabackup-97/copyright: licenses/COPYRIGHT-percona-xtrabackup
       usr/share/doc/percona-mysql-router/copyright: licenses/COPYRIGHT-percona-mysql-router
       usr/share/doc/percona-mysql-shell/copyright: licenses/COPYRIGHT-percona-mysql-shell
-      usr/share/doc/proxysql2/copyright: licenses/COPYRIGHT-proxysql
+      usr/share/doc/proxysql3/copyright: licenses/COPYRIGHT-proxysql
       usr/share/doc/percona-orchestrator/copyright: licenses/COPYRIGHT-percona-orchestrator
       usr/share/doc/percona-orchestrator-client/copyright: licenses/COPYRIGHT-percona-orchestrator-client
       usr/share/doc/util-linux/copyright: licenses/COPYRIGHT-util-linux
