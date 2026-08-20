@@ -61,8 +61,10 @@ layout:
     symlink: $SNAP_COMMON/var/log/mysqlrouter
   /usr/lib/mysqlrouter:
     symlink: $SNAP/usr/lib/mysqlrouter
-  /usr/lib/mysql-router:
-    symlink: $SNAP/usr/lib/mysql-router
+  # Note: /usr/lib/mysql-router (with a dash) dropped — percona-mysql-router
+  # only ships usr/lib/mysqlrouter (no dash) in this build; confirmed no
+  # such path exists anywhere in the staged/primed tree, so the layout
+  # source was absent.
   /usr/lib/mysqlsh:
     bind: $SNAP/usr/lib/mysqlsh
   /var/log/mysqlsh:
@@ -236,6 +238,15 @@ parts:
       - -usr/bin/xtrabackup-debug
       - -usr/sbin/mysqld-debug
       - -usr/lib/mysql/plugin/debug
+      # rsync: pulled in only as apt-recommends noise (real build staged it
+      # alongside a pile of unrelated -dev packages); no wrapper or
+      # component in this snap invokes it, so it is dropped rather than
+      # kept in sync with libpopt.so below (its only staged dependent).
+      - -usr/bin/rsync
+      - -usr/bin/rsync-ssl
+      - -usr/share/doc/rsync
+      - -usr/share/rsync
+      - -usr/share/lintian/overrides/rsync
       # Orchestrator: unused samples and legacy resources
       - -usr/local/orchestrator/orchestrator-sample.conf.json
       - -usr/local/orchestrator/orchestrator-sample-sqlite.conf.json
@@ -248,7 +259,16 @@ parts:
       - -usr/lib/*/libc_malloc_debug.so*
       - -usr/lib/*/libdl.so*
       - -usr/lib/*/libdrop_ambient.so*
+      - -usr/lib/*/libexpatw.so*
+      - -usr/lib/*/libformw.so*
+      - -usr/lib/*/libgmpxx.so*
+      - -usr/lib/*/libgnutls-dane.so*
+      - -usr/lib/*/libgnutls-openssl.so*
+      - -usr/lib/*/libhistory.so*
+      - -usr/lib/*/libkadm5clnt_mit.so*
+      - -usr/lib/*/libkadm5srv_mit.so*
       - -usr/lib/*/libmemusage.so*
+      - -usr/lib/*/libmenuw.so*
       - -usr/lib/*/libmvec.so*
       - -usr/lib/*/libnsl.so*
       - -usr/lib/*/libnss_compat.so*
@@ -264,6 +284,11 @@ parts:
       - -usr/lib/*/libtic.so*
       - -usr/lib/*/libutil.so*
     organize:
+      # proxysql2's packaged default config collides at the same stage path
+      # (etc/proxysql.cnf) with the seeded config the snap-scripts part
+      # installs there; reroute the packaged default out of the way so our
+      # own config (rendered by the install hook) is the one that ships.
+      etc/proxysql.cnf: usr/share/proxysql2/proxysql.cnf.default
       usr/share/doc/percona-server-server/copyright: licenses/COPYRIGHT-percona-server-server
       usr/share/doc/percona-server-client/copyright: licenses/COPYRIGHT-percona-server-client
       usr/share/doc/percona-server-common/copyright: licenses/COPYRIGHT-percona-server-common
