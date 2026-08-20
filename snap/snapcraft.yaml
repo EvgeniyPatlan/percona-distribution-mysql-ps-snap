@@ -141,19 +141,19 @@ apps:
     plugs:
       - network
   xtrabackup:
-    command: bin/run-xtrabackup.sh
+    command: usr/bin/xtrabackup
     plugs:
       - network
   xbstream:
-    command: bin/run-xbstream.sh
+    command: usr/bin/xbstream
     plugs:
       - network
   xbcloud:
-    command: bin/run-xbcloud.sh
+    command: usr/bin/xbcloud
     plugs:
       - network
   xbcrypt:
-    command: bin/run-xbcrypt.sh
+    command: usr/bin/xbcrypt
     plugs:
       - network
   mysqlsh:
@@ -267,6 +267,8 @@ parts:
       - -usr/lib/*/libhistory.so*
       - -usr/lib/*/libkadm5clnt_mit.so*
       - -usr/lib/*/libkadm5srv_mit.so*
+      - -usr/lib/*/libkdb5.so*
+      - -usr/lib/*/libunbound.so*
       - -usr/lib/*/libmemusage.so*
       - -usr/lib/*/libmenuw.so*
       - -usr/lib/*/libmvec.so*
