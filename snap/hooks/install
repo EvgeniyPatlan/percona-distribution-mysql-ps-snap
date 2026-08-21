@@ -66,10 +66,17 @@ init_distribution() {
     chown -R snap_daemon:root $SNAP_COMMON/var/log/mysqlrouter $SNAP_COMMON/var/log/mysqlsh
     chown -R snap_daemon:root $SNAP_COMMON/var/lib/mysql-files
 
-    # ProxySQL: data dir + seeded config
+    # ProxySQL: data dir + seeded config.
+    # IMPORTANT: the config must NOT live directly in $SNAP_DATA/etc: my.cnf's
+    # "!includedir $SNAP_DATA/etc" makes mysqld parse every *.cnf file in that
+    # directory as its own ini-style config, and ProxySQL's brace-block format
+    # has no [group] headers, so mysqld fails with "Found option without
+    # preceding group" and refuses to start. Seed it into its own
+    # subdirectory instead.
     mkdir -p $SNAP_COMMON/proxysql
-    cp $SNAP/etc/proxysql.cnf $SNAP_DATA/etc/
-    chown -R snap_daemon:root $SNAP_COMMON/proxysql $SNAP_DATA/etc/proxysql.cnf
+    mkdir -p $SNAP_DATA/etc/proxysql
+    cp $SNAP/etc/proxysql.cnf $SNAP_DATA/etc/proxysql/proxysql.cnf
+    chown -R snap_daemon:root $SNAP_COMMON/proxysql "$SNAP_DATA/etc/proxysql"
 
     # Orchestrator: sqlite dir + config
     mkdir -p $SNAP_COMMON/orchestrator
