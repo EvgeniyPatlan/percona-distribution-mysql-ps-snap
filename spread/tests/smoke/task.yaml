@@ -34,6 +34,10 @@ execute: |
   percona-distribution-mysql-ps.xbcloud --help >/dev/null 2>&1 || true
   percona-distribution-mysql-ps.xbcrypt --help >/dev/null 2>&1 || true
 
+  echo "Ensure Percona Toolkit tools are present"
+  percona-distribution-mysql-ps.pt-summary --help &>/dev/null
+  percona-distribution-mysql-ps.pt-query-digest --version &>/dev/null
+
   echo "Ensure telemetry is not active"
   # variable must be absent (component not loaded) or ON (disabled); never OFF
   if percona-distribution-mysql-ps.mysql --user=root \

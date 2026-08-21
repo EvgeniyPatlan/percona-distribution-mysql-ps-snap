@@ -21,6 +21,14 @@ description: |
       -S /var/snap/percona-distribution-mysql-ps/current/run/mysqld.sock \
       --target-dir=/var/snap/percona-distribution-mysql-ps/common/backup
 
+  Percona Toolkit tools are exposed as individual commands, e.g.:
+    sudo percona-distribution-mysql-ps.pt-summary
+    sudo percona-distribution-mysql-ps.pt-query-digest \
+      /var/snap/percona-distribution-mysql-ps/common/slow.log
+  Input files for the toolkit commands must live under
+  /var/snap/percona-distribution-mysql-ps/common (the snap cannot read
+  your home directory).
+
   Optional services (disabled by default, start with `snap start`):
     .mysqlrouter-service — MySQL Router; config in
       /var/snap/percona-distribution-mysql-ps/current/etc/mysqlrouter/,
@@ -77,6 +85,8 @@ layout:
     bind: $SNAP_COMMON/var/log/mysqlsh
   /var/lib/mysql-files:
     bind: $SNAP_COMMON/var/lib/mysql-files
+  /usr/bin/perl:
+    bind-file: $SNAP/usr/bin/perl
 
 package-repositories:
   - type: apt
@@ -207,6 +217,174 @@ apps:
     command: bin/run-orchestrator-client.sh
     plugs:
       - network
+  pt-align:
+    command: bin/pt-tool.sh pt-align
+    plugs:
+      - network
+  pt-archiver:
+    command: bin/pt-tool.sh pt-archiver
+    plugs:
+      - network
+  pt-config-diff:
+    command: bin/pt-tool.sh pt-config-diff
+    plugs:
+      - network
+  pt-deadlock-logger:
+    command: bin/pt-tool.sh pt-deadlock-logger
+    plugs:
+      - network
+  pt-diskstats:
+    command: bin/pt-tool.sh pt-diskstats
+    plugs:
+      - network
+  pt-duplicate-key-checker:
+    command: bin/pt-tool.sh pt-duplicate-key-checker
+    plugs:
+      - network
+  pt-eustack-resolver:
+    command: bin/pt-tool.sh pt-eustack-resolver
+    plugs:
+      - network
+  pt-fifo-split:
+    command: bin/pt-tool.sh pt-fifo-split
+    plugs:
+      - network
+  pt-find:
+    command: bin/pt-tool.sh pt-find
+    plugs:
+      - network
+  pt-fingerprint:
+    command: bin/pt-tool.sh pt-fingerprint
+    plugs:
+      - network
+  pt-fk-error-logger:
+    command: bin/pt-tool.sh pt-fk-error-logger
+    plugs:
+      - network
+  pt-galera-log-explainer:
+    command: bin/pt-tool.sh pt-galera-log-explainer
+    plugs:
+      - network
+  pt-heartbeat:
+    command: bin/pt-tool.sh pt-heartbeat
+    plugs:
+      - network
+  pt-index-usage:
+    command: bin/pt-tool.sh pt-index-usage
+    plugs:
+      - network
+  pt-ioprofile:
+    command: bin/pt-tool.sh pt-ioprofile
+    plugs:
+      - network
+  pt-k8s-debug-collector:
+    command: bin/pt-tool.sh pt-k8s-debug-collector
+    plugs:
+      - network
+  pt-kill:
+    command: bin/pt-tool.sh pt-kill
+    plugs:
+      - network
+  pt-mext:
+    command: bin/pt-tool.sh pt-mext
+    plugs:
+      - network
+  pt-mongodb-index-check:
+    command: bin/pt-tool.sh pt-mongodb-index-check
+    plugs:
+      - network
+  pt-mongodb-query-digest:
+    command: bin/pt-tool.sh pt-mongodb-query-digest
+    plugs:
+      - network
+  pt-mongodb-summary:
+    command: bin/pt-tool.sh pt-mongodb-summary
+    plugs:
+      - network
+  pt-mysql-summary:
+    command: bin/pt-tool.sh pt-mysql-summary
+    plugs:
+      - network
+  pt-online-schema-change:
+    command: bin/pt-tool.sh pt-online-schema-change
+    plugs:
+      - network
+  pt-pg-summary:
+    command: bin/pt-tool.sh pt-pg-summary
+    plugs:
+      - network
+  pt-pmp:
+    command: bin/pt-tool.sh pt-pmp
+    plugs:
+      - network
+  pt-query-digest:
+    command: bin/pt-tool.sh pt-query-digest
+    plugs:
+      - network
+  pt-replica-find:
+    command: bin/pt-tool.sh pt-replica-find
+    plugs:
+      - network
+  pt-replica-restart:
+    command: bin/pt-tool.sh pt-replica-restart
+    plugs:
+      - network
+  pt-secure-collect:
+    command: bin/pt-tool.sh pt-secure-collect
+    plugs:
+      - network
+  pt-show-grants:
+    command: bin/pt-tool.sh pt-show-grants
+    plugs:
+      - network
+  pt-sift:
+    command: bin/pt-tool.sh pt-sift
+    plugs:
+      - network
+  pt-slave-delay:
+    command: bin/pt-tool.sh pt-slave-delay
+    plugs:
+      - network
+  pt-slave-find:
+    command: bin/pt-tool.sh pt-slave-find
+    plugs:
+      - network
+  pt-slave-restart:
+    command: bin/pt-tool.sh pt-slave-restart
+    plugs:
+      - network
+  pt-stalk:
+    command: bin/pt-tool.sh pt-stalk
+    plugs:
+      - network
+  pt-summary:
+    command: bin/pt-tool.sh pt-summary
+    plugs:
+      - network
+  pt-table-checksum:
+    command: bin/pt-tool.sh pt-table-checksum
+    plugs:
+      - network
+  pt-table-sync:
+    command: bin/pt-tool.sh pt-table-sync
+    plugs:
+      - network
+  pt-table-usage:
+    command: bin/pt-tool.sh pt-table-usage
+    plugs:
+      - network
+  pt-upgrade:
+    command: bin/pt-tool.sh pt-upgrade
+    plugs:
+      - network
+  pt-variable-advisor:
+    command: bin/pt-tool.sh pt-variable-advisor
+    plugs:
+      - network
+  pt-visual-explain:
+    command: bin/pt-tool.sh pt-visual-explain
+    plugs:
+      - network
 
 parts:
   packages-deb:
@@ -221,7 +399,13 @@ parts:
       - proxysql2=2:2.7.3-1.6.resolute
       - percona-orchestrator=2:3.2.6-24.resolute
       - percona-orchestrator-client=2:3.2.6-24.resolute
+      - percona-toolkit=3.7.1-4.resolute
+      - libdbd-mysql-perl=1:5.013-4.resolute
       - util-linux
+      - perl
+      - libdbi-perl
+      - libterm-readkey-perl
+      - libio-socket-ssl-perl
     prime:
       # Percona telemetry agent (pulled in as a hard dependency; not shipped)
       - -usr/bin/percona-telemetry-agent
@@ -307,7 +491,13 @@ parts:
       usr/share/doc/proxysql2/copyright: licenses/COPYRIGHT-proxysql
       usr/share/doc/percona-orchestrator/copyright: licenses/COPYRIGHT-percona-orchestrator
       usr/share/doc/percona-orchestrator-client/copyright: licenses/COPYRIGHT-percona-orchestrator-client
+      usr/share/doc/percona-toolkit/copyright: licenses/COPYRIGHT-percona-toolkit
+      usr/share/doc/libdbd-mysql-perl/copyright: licenses/COPYRIGHT-libdbd-mysql-perl
       usr/share/doc/util-linux/copyright: licenses/COPYRIGHT-util-linux
+      usr/share/doc/perl/copyright: licenses/COPYRIGHT-perl
+      usr/share/doc/libdbi-perl/copyright: licenses/COPYRIGHT-libdbi-perl
+      usr/share/doc/libterm-readkey-perl/copyright: licenses/COPYRIGHT-libterm-readkey-perl
+      usr/share/doc/libio-socket-ssl-perl/copyright: licenses/COPYRIGHT-libio-socket-ssl-perl
   snap-license:
     plugin: dump
     source: .
