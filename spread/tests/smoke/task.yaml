@@ -27,7 +27,11 @@ execute: |
   percona-distribution-mysql-ps.xtrabackup --version
   percona-distribution-mysql-ps.mysqlsh --version
   percona-distribution-mysql-ps.mysqlrouter --version
-  percona-distribution-mysql-ps.orchestrator-client -c help >/dev/null
+  # orchestrator-client's upstream help formatter shells out to whoami/column,
+  # which are unreliable under strict confinement (whoami exec denied by
+  # apparmor; column absent from the core24 base) -- best-effort like its
+  # neighbors below.
+  percona-distribution-mysql-ps.orchestrator-client -c help >/dev/null 2>&1 || true
   percona-distribution-mysql-ps.proxysql-admin --help >/dev/null 2>&1 || true
   percona-distribution-mysql-ps.proxysql-status >/dev/null 2>&1 || true
   percona-distribution-mysql-ps.xbstream --help >/dev/null 2>&1 || true
