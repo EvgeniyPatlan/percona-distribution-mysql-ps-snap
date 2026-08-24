@@ -46,7 +46,23 @@ execute: |
     sleep 2
   done
   snap services percona-distribution-mysql-ps.mysqlrouter-service | grep -q " active"
-  curl -s http://127.0.0.1:8081/api/20190715/swagger.json | grep -q swagger
+
+  # "active" only means snapd's supervised process is running; the REST
+  # plugin inside it can still be a moment behind, so retry like the
+  # service-status wait above instead of a single one-shot curl.
+  SWAGGER=""
+  for i in $(seq 15); do
+    SWAGGER="$(curl -s http://127.0.0.1:8081/api/20190715/swagger.json || true)"
+    if echo "${SWAGGER}" | grep -q swagger; then break; fi
+    sleep 2
+  done
+  if ! echo "${SWAGGER}" | grep -q swagger; then
+    echo "swagger.json check failed; router log follows:" >&2
+    snap logs percona-distribution-mysql-ps.mysqlrouter-service -n 200 >&2 || true
+    echo "curl verbose output:" >&2
+    curl -v http://127.0.0.1:8081/api/20190715/swagger.json >&2 || true
+    exit 1
+  fi
 
   snap stop percona-distribution-mysql-ps.mysqlrouter-service
 
