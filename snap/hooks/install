@@ -49,14 +49,30 @@ init_snap_data() {
 }
 
 init_snap_common() {
-    # Create directory for storing data and set permissions. The
-    # restrictive mode is folded into mkdir -m (rather than a later
-    # `chmod go-rwx`) because CI logs proved a second post-creation
-    # mutating root op on this path fails under strict confinement: the
-    # earlier chown already used up root's one touch, and root has no
-    # DAC-override/FOWNER to chmod a path it no longer owns
-    # ("chmod: Operation not permitted (os error 1)").
-    mkdir -m 700 $SNAP_COMMON/data
+    # Create directory for storing data and set permissions.
+    #
+    # NOTE on the trailing chmod below: folding its mode into `mkdir -m`
+    # here (matching the family recipe) was tried and reverted — CI logs
+    # proved it regresses the "was the data dir initialized?" check a few
+    # lines down. That check runs as root (unlike --initialize, which
+    # runs as snap_daemon via setpriv and is exempt from the confinement
+    # restriction). mkdir -m 700 up front makes group bits 0 immediately
+    # after chown, and root only retains DAC access to this snap_daemon-
+    # owned path via its GROUP match (root:root); with group bits
+    # stripped, root can no longer even stat the file, so the check
+    # spuriously reports "not initialized". Leaving mkdir unmoded here
+    # keeps the directory group-readable (root can still stat) until the
+    # chmod below runs; that chmod is root's SECOND mutating touch on
+    # this path (after the chown above) and CI logs prove it fails
+    # ("chmod: Operation not permitted (os error 1)") under strict
+    # confinement — same as everywhere else in this hook. It has always
+    # failed here, silently (no `set -e`, and it wasn't the script's last
+    # command even before this fix), so this preserves the pre-existing,
+    # already-shipped behavior rather than introducing a new regression;
+    # tightening this directory's mode properly needs a mechanism (e.g.
+    # running the check itself via setpriv) out of scope for this
+    # confinement-only fix.
+    mkdir $SNAP_COMMON/data
     chown snap_daemon:root $SNAP_COMMON/data
 
     # Initialize data directory
@@ -70,6 +86,12 @@ init_snap_common() {
         echo "Error: MySQL was unable to initialize the data directory at $SNAP_COMMON/data" >&2
         exit 1
     fi
+
+    # Remove "group" and "other" permission access from data directory.
+    # This chmod is a known no-op under strict confinement (see note
+    # above) — kept as documentation of intent and because removing it
+    # entirely is an unrelated, unproven behavior change.
+    chmod go-rwx $SNAP_COMMON/data
 }
 
 enable_auth_socket() {
