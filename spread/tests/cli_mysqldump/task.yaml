@@ -19,7 +19,14 @@ execute: |
   ${CMD} -e "INSERT INTO test_db.test_table (id, name) VALUES (1, 'test_name');"
 
   echo "Dump test db"
-  ${CMD_DUMP} --databases test_db | cat >test_db.sql
+  # --set-gtid-purged=OFF: this track's Percona Server defaults
+  # GTID_MODE=ON (unlike 8.4, which defaults it OFF), so mysqldump embeds a
+  # SET @@GLOBAL.GTID_PURGED=... statement whenever the server has GTIDs.
+  # Restoring that onto this same live server (which never purged anything)
+  # collides with @@GLOBAL.GTID_EXECUTED -> ERROR 3546. This suite only
+  # checks a plain dump/restore round trip, not GTID preservation, so skip
+  # it as mysqldump's own warning suggests.
+  ${CMD_DUMP} --set-gtid-purged=OFF --databases test_db | cat >test_db.sql
 
   echo "Drop test db"
   ${CMD} -e "DROP DATABASE test_db;"
