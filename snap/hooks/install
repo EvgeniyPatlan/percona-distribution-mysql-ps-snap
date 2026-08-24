@@ -1,9 +1,34 @@
 #!/bin/bash
 
 init_snap_data() {
-    # Configuration
+    # Configuration. MySQL Router / ProxySQL / Orchestrator config is also
+    # seeded here (moved up from init_distribution) so the ENTIRE
+    # $SNAP_DATA/etc tree is fully populated before the single chown -R
+    # below: under strict confinement, root has no DAC-override/FOWNER, so
+    # once a path is chowned away from root, root can no longer create new
+    # entries under it or touch it again. CI logs proved this: the old
+    # ordering chowned $SNAP_DATA/etc here, then init_distribution's later
+    # mkdir/cp calls into that same tree failed with
+    # "mkdir: Permission denied" / "cp: ...: Permission denied".
     mkdir $SNAP_DATA/etc
     cp $SNAP/etc/mysqld.cnf $SNAP_DATA/etc
+
+    # MySQL Router config dir (layout target)
+    mkdir -p $SNAP_DATA/etc/mysqlrouter
+
+    # ProxySQL: seeded config.
+    # IMPORTANT: the config must NOT live directly in $SNAP_DATA/etc: my.cnf's
+    # "!includedir $SNAP_DATA/etc" makes mysqld parse every *.cnf file in that
+    # directory as its own ini-style config, and ProxySQL's brace-block format
+    # has no [group] headers, so mysqld fails with "Found option without
+    # preceding group" and refuses to start. Seed it into its own
+    # subdirectory instead.
+    mkdir -p $SNAP_DATA/etc/proxysql
+    cp $SNAP/etc/proxysql.cnf $SNAP_DATA/etc/proxysql/proxysql.cnf
+
+    # Orchestrator config
+    cp $SNAP/etc/orchestrator.conf.json $SNAP_DATA/etc/
+
     chown -R snap_daemon:root $SNAP_DATA/etc
 
     # Logs
@@ -17,11 +42,21 @@ init_snap_data() {
     # Sockets
     mkdir $SNAP_DATA/run
     chown -R snap_daemon:root $SNAP_DATA/run
+
+    # MySQL Router lib dir (layout target)
+    mkdir -p $SNAP_DATA/var/lib/mysqlrouter
+    chown -R snap_daemon:root $SNAP_DATA/var/lib/mysqlrouter
 }
 
 init_snap_common() {
-    # Create directory for storing data and set permissions
-    mkdir $SNAP_COMMON/data
+    # Create directory for storing data and set permissions. The
+    # restrictive mode is folded into mkdir -m (rather than a later
+    # `chmod go-rwx`) because CI logs proved a second post-creation
+    # mutating root op on this path fails under strict confinement: the
+    # earlier chown already used up root's one touch, and root has no
+    # DAC-override/FOWNER to chmod a path it no longer owns
+    # ("chmod: Operation not permitted (os error 1)").
+    mkdir -m 700 $SNAP_COMMON/data
     chown snap_daemon:root $SNAP_COMMON/data
 
     # Initialize data directory
@@ -35,9 +70,6 @@ init_snap_common() {
         echo "Error: MySQL was unable to initialize the data directory at $SNAP_COMMON/data" >&2
         exit 1
     fi
-
-    # Remove "group" and "other" permission access from data directory
-    chmod go-rwx $SNAP_COMMON/data
 }
 
 enable_auth_socket() {
@@ -58,30 +90,22 @@ enable_auth_socket() {
 }
 
 init_distribution() {
-    # MySQL Router / Shell / mysql-files directories (layout targets)
-    mkdir -p $SNAP_DATA/etc/mysqlrouter $SNAP_DATA/var/lib/mysqlrouter
+    # MySQL Shell / mysql-files directories (layout targets). MySQL
+    # Router's and ProxySQL's $SNAP_DATA/etc subdirs and Orchestrator's
+    # $SNAP_DATA/etc config are now seeded in init_snap_data, before that
+    # tree's single chown -R (see comment there).
     mkdir -p $SNAP_COMMON/var/log/mysqlrouter $SNAP_COMMON/var/log/mysqlsh
     mkdir -p $SNAP_COMMON/var/lib/mysql-files
-    chown -R snap_daemon:root $SNAP_DATA/etc/mysqlrouter $SNAP_DATA/var/lib/mysqlrouter
     chown -R snap_daemon:root $SNAP_COMMON/var/log/mysqlrouter $SNAP_COMMON/var/log/mysqlsh
     chown -R snap_daemon:root $SNAP_COMMON/var/lib/mysql-files
 
-    # ProxySQL: data dir + seeded config.
-    # IMPORTANT: the config must NOT live directly in $SNAP_DATA/etc: my.cnf's
-    # "!includedir $SNAP_DATA/etc" makes mysqld parse every *.cnf file in that
-    # directory as its own ini-style config, and ProxySQL's brace-block format
-    # has no [group] headers, so mysqld fails with "Found option without
-    # preceding group" and refuses to start. Seed it into its own
-    # subdirectory instead.
+    # ProxySQL: data dir
     mkdir -p $SNAP_COMMON/proxysql
-    mkdir -p $SNAP_DATA/etc/proxysql
-    cp $SNAP/etc/proxysql.cnf $SNAP_DATA/etc/proxysql/proxysql.cnf
-    chown -R snap_daemon:root $SNAP_COMMON/proxysql "$SNAP_DATA/etc/proxysql"
+    chown -R snap_daemon:root $SNAP_COMMON/proxysql
 
-    # Orchestrator: sqlite dir + config
+    # Orchestrator: sqlite dir
     mkdir -p $SNAP_COMMON/orchestrator
-    cp $SNAP/etc/orchestrator.conf.json $SNAP_DATA/etc/
-    chown -R snap_daemon:root $SNAP_COMMON/orchestrator $SNAP_DATA/etc/orchestrator.conf.json
+    chown -R snap_daemon:root $SNAP_COMMON/orchestrator
 }
 
 init_snap_data
