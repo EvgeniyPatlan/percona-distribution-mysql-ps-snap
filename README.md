@@ -158,6 +158,7 @@ running until you `snap start` them.
 ```
 sudo percona-distribution-mysql-ps.xtrabackup --backup -u root \
   -S /var/snap/percona-distribution-mysql-ps/current/run/mysqld.sock \
+  --datadir=/var/snap/percona-distribution-mysql-ps/common/data \
   --target-dir=/var/snap/percona-distribution-mysql-ps/common/backup
 sudo percona-distribution-mysql-ps.xtrabackup --prepare \
   --target-dir=/var/snap/percona-distribution-mysql-ps/common/backup
