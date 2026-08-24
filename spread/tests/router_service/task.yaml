@@ -16,6 +16,8 @@ execute: |
   logging_folder=
 
   [http_server]
+  port=8081
+  ssl=0
 
   [rest_api]
 
