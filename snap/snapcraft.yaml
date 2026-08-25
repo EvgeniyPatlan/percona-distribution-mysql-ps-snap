@@ -413,8 +413,8 @@ parts:
       - percona-mysql-router=9.7.1-1-1.resolute
       - percona-mysql-shell=9.7.1-1-1.resolute
       - proxysql3=2:3.0.9-1.1.resolute
-      - percona-orchestrator=2:3.2.6-23.resolute
-      - percona-orchestrator-client=2:3.2.6-23.resolute
+      - percona-orchestrator=2:3.2.6-24.resolute
+      - percona-orchestrator-client=2:3.2.6-24.resolute
       - percona-toolkit=3.7.1-4.resolute
       - libdbd-mysql-perl=1:5.013-4.resolute
       - util-linux
