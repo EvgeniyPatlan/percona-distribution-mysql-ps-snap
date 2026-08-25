@@ -269,6 +269,71 @@ CRAFT_ARTIFACT=$(pwd)/percona-distribution-mysql-ps_<version>_amd64.snap spread 
 (`spread` from `go install github.com/canonical/spread/cmd/spread@latest`;
 needs the `lxd` snap.)
 
+## Updating to a new Percona release
+
+`scripts/bump-version.sh` checks every exact-pinned package in
+`snap/snapcraft.yaml` against the apt indexes declared under
+`package-repositories`, and bumps any pin (and the top-level `version:`
+field, derived from the `percona-server-server` pin) that is out of date.
+
+This repo has two tracks (`8.4/edge`, `9.7/edge`), each with its own
+`snap/snapcraft.yaml` and its own set of pins, so a bump on one branch has
+no effect on the other — the script only ever touches the branch it is
+run against.
+
+For a package sourced from more than one apt repository — `9.7/edge`
+declares `pdps-97-lts` and `pdps-84-lts` alongside the shared `telemetry`
+repo, because `percona-toolkit` is not yet published to `pdps-97-lts`'s
+`resolute` suite — the script only takes candidate versions from the
+first repository, in the order declared under `package-repositories`,
+that actually contains that package. That is how `percona-toolkit`
+resolves from `pdps-84-lts` on `9.7/edge` while every other package
+resolves from its own track's repository and ignores the `8.4` one
+entirely. If Percona later publishes `percona-toolkit` to `pdps-97-lts`,
+the same rule switches it to tracking that repo automatically — no code
+change needed.
+
+### Automated
+
+The `Update check` workflow (`.github/workflows/update-check.yaml`) runs
+weekly and, for each `*/edge` branch (`8.4/edge` and `9.7/edge`), runs the
+same script and opens a pull request per branch that has an available
+update. The PR:
+
+- touches only `snap/snapcraft.yaml`, with the pin diff as the commit;
+- contains the script's summary table (old/new version per package) in its
+  description;
+- is verified the same way any other PR is: CI (`Tests`) builds the snap for
+  `amd64` and `arm64` and runs the full spread suite against it. Merging the
+  PR into its track branch produces the downloadable `snap-packages`
+  artifact described above.
+
+To trigger an immediate check instead of waiting for the weekly run, start
+the `Update check` workflow manually from the Actions tab (`workflow_dispatch`,
+optionally scoped to one branch via the `branch` input).
+
+If a bump PR is closed without merging, its `bump/<track>-<version>`
+branch is left behind and that exact version is skipped on every future
+run until the branch is deleted (or a newer version ships) — delete the
+branch if you want the check retried for that version.
+
+### Manual
+
+```
+./scripts/bump-version.sh
+git diff
+```
+
+Review the diff, then commit and push as usual.
+
+### Scope
+
+The script only updates pins within the track of the branch it is run
+against. A new Percona major version means a new track/branch and, per
+the Percona publishing model for this family, a new apt repository path
+(`repo.percona.com/pdps-<NN>-lts/apt`) — that is a manual, one-time setup,
+not something this script does.
+
 ## License
 
 The snap packaging is Apache-2.0. Upstream component licenses (Percona
