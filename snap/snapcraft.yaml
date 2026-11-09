@@ -396,7 +396,7 @@ parts:
       - percona-server-rocksdb=8.4.11-11-1.resolute
       - percona-xtrabackup-84=8.4.0-6-1.resolute
       - percona-mysql-router=8.4.11-11-1.resolute
-      - percona-mysql-shell=8.4.10-1-1.resolute
+      - percona-mysql-shell=8.4.10-1-2.resolute
       - proxysql2=2:2.7.3-1.6.resolute
       - percona-orchestrator=2:3.2.6-24.resolute
       - percona-orchestrator-client=2:3.2.6-24.resolute
