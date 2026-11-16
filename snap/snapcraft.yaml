@@ -1,6 +1,6 @@
 name: percona-distribution-mysql-ps
 base: core26
-version: '8.4.11-11'
+version: '8.4.11-12'
 summary: Percona Distribution for MySQL (Percona Server-based) in a snap.
 description: |
   Percona Distribution for MySQL is a single solution combining Percona
@@ -391,12 +391,12 @@ parts:
   packages-deb:
     plugin: nil
     stage-packages:
-      - percona-server-server=8.4.11-11-1.resolute
-      - percona-server-client=8.4.11-11-1.resolute
-      - percona-server-rocksdb=8.4.11-11-1.resolute
+      - percona-server-server=8.4.11-12-1.resolute
+      - percona-server-client=8.4.11-12-1.resolute
+      - percona-server-rocksdb=8.4.11-12-1.resolute
       - percona-xtrabackup-84=8.4.0-6-1.resolute
-      - percona-mysql-router=8.4.11-11-1.resolute
-      - percona-mysql-shell=8.4.10-1-1.resolute
+      - percona-mysql-router=8.4.11-12-1.resolute
+      - percona-mysql-shell=8.4.10-1-2.resolute
       - proxysql2=2:2.7.3-1.6.resolute
       - percona-orchestrator=2:3.2.6-24.resolute
       - percona-orchestrator-client=2:3.2.6-24.resolute
